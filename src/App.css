@@ -1,0 +1,244 @@
+/* Terminal Interface System */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  /* Claude.ai Color Palette */
+  --primary-bg: #DA7756;
+  --terminal-surface: #FFFFFF;
+  --text-primary: #2C2B29;
+  --text-secondary: #6B6B6B;
+  --text-muted: #9B9B9B;
+  --claude-orange: #DA7756;
+  --claude-orange-light: #E89980;
+  --claude-orange-dark: #C15F3C;
+  --success-green: #059669;
+  --error-red: #DC2626;
+  --warning-yellow: #D97706;
+  
+  /* Surface colors */
+  --surface-light: rgba(255, 255, 255, 0.8);
+  --surface-medium: rgba(255, 255, 255, 0.95);
+  --border-light: rgba(44, 43, 41, 0.1);
+  --shadow-color: rgba(0, 0, 0, 0.1);
+  
+  /* Typography - Monospace for authentic terminal feel */
+  --font-mono: "JetBrains Mono", "Fira Code", "SF Mono", Monaco, "Cascadia Code", "Roboto Mono", Consolas, "Courier New", monospace;
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  
+  /* Animation */
+  --duration-fast: 0.15s;
+  --duration-normal: 0.3s;
+  --duration-slow: 0.6s;
+  --ease: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+body {
+  font-family: var(--font-sans);
+  background: var(--primary-bg);
+  color: var(--text-primary);
+  line-height: 1.6;
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+}
+
+/* App Container */
+.app {
+  min-height: 100vh;
+  background: var(--primary-bg);
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Boot Screen */
+.boot-screen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: var(--primary-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.boot-text {
+  font-family: var(--font-sans);
+  font-size: clamp(1rem, 2vw, 1.25rem);
+  color: var(--terminal-surface);
+  text-align: center;
+}
+
+.boot-line {
+  opacity: 0;
+  transform: translateY(10px);
+  animation: bootLine 0.5s ease-out forwards;
+  margin-bottom: 8px;
+}
+
+.boot-line.delay-1 { animation-delay: 0.3s; }
+.boot-line.delay-2 { animation-delay: 0.6s; }
+.boot-line.delay-3 { animation-delay: 0.9s; color: var(--claude-orange-light); }
+
+@keyframes bootLine {
+  0% {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Boot completion */
+.app.booted .boot-screen {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.5s ease;
+}
+
+/* Terminal Effects */
+.scanlines {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 3px,
+    rgba(255, 51, 102, 0.02) 3px,
+    rgba(255, 51, 102, 0.02) 6px
+  );
+  pointer-events: none;
+  z-index: 1000;
+  animation: scanlines 0.2s linear infinite;
+}
+
+@keyframes scanlines {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(6px); }
+}
+
+/* Modern Cursor Animation */
+.cursor {
+  animation: cursor-blink 1s infinite;
+}
+
+@keyframes cursor-blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+
+/* Glow Effects */
+.glow-text {
+  text-shadow: 0 0 10px currentColor;
+}
+
+.glow-primary { color: var(--claude-primary); text-shadow: 0 0 10px var(--claude-primary); }
+.glow-blue { color: var(--terminal-blue); text-shadow: 0 0 10px var(--terminal-blue); }
+.glow-orange { color: var(--claude-orange); text-shadow: 0 0 10px var(--claude-orange); }
+.glow-yellow { color: var(--terminal-yellow); text-shadow: 0 0 10px var(--terminal-yellow); }
+.glow-cream { color: var(--claude-cream); text-shadow: 0 0 10px var(--claude-cream); }
+
+/* ASCII Art Styling */
+.ascii-art {
+  font-family: var(--font-mono);
+  white-space: pre;
+  color: var(--claude-primary);
+  text-shadow: 0 0 5px var(--claude-primary);
+  font-size: 12px;
+  line-height: 1.2;
+}
+
+/* Command Styling */
+.command {
+  color: var(--terminal-blue);
+  font-weight: 600;
+}
+
+.output {
+  color: var(--claude-cream);
+  margin-left: 0;
+}
+
+.error {
+  color: var(--terminal-red);
+}
+
+.success {
+  color: var(--claude-primary);
+}
+
+.warning {
+  color: var(--terminal-yellow);
+}
+
+.info {
+  color: var(--terminal-blue);
+}
+
+.highlight {
+  color: var(--claude-orange);
+  font-weight: bold;
+}
+
+/* Matrix-style background effect */
+.matrix-bg {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+  opacity: 0.1;
+  background: repeating-conic-gradient(
+    from 0deg,
+    var(--terminal-bg) 0deg 45deg,
+    rgba(0, 255, 65, 0.02) 45deg 90deg
+  );
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  body { font-size: 13px; }
+  .boot-text { font-size: 14px; }
+  .ascii-art { font-size: 10px; }
+}
+
+@media (max-width: 480px) {
+  body { font-size: 12px; }
+  .boot-text { font-size: 13px; }
+  .ascii-art { font-size: 9px; }
+}
+
+/* Hide default scrollbar and add custom one */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--terminal-bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--claude-primary);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--claude-primary-light);
+}
