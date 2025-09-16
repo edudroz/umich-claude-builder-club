@@ -1,6 +1,6 @@
-# Claude Builder Club @ Johns Hopkins University
+# Claude Builder Club @ University of Michigan
 
-A modern, terminal-style React site for the Johns Hopkins University Claude Builder Club. The UI emulates a command-line interface where visitors can explore the club via typed commands (e.g., `help`, `about`, `join`).
+A modern, terminal-style React site for the  University of michigan Claude Builder Club. The UI emulates a command-line interface where visitors can explore the club via typed commands (e.g., `help`, `about`, `join`).
 
 ## 🚀 Features
 
@@ -102,5 +102,3 @@ Use the `contact` command on the site for current leadership and links, or reach
 This project is open source and available under the MIT License.
 
 ---
-
-**Built with ❤️ for the Johns Hopkins University Claude Builder Club**
