@@ -36,6 +36,17 @@ def calls(monkeypatch, tmp_path):
     return log
 
 
+@pytest.fixture(autouse=True)
+def reset_announce(monkeypatch):
+    monkeypatch.setattr(bot, "_last_announce", 0.0)
+    monkeypatch.setattr(bot, "_removed_since_announce", 0)
+    monkeypatch.setattr(bot, "EXEMPT_USER_IDS", set())
+
+
+def bot_posts(calls):
+    return [c[2]["text"] for c in calls if c[1].endswith("/bots/post")]
+
+
 def post(msg, secret="s3cret"):
     return bot.app.test_client().post(f"/callback?secret={secret}", json=msg)
 
@@ -45,12 +56,28 @@ def user_msg(text, user_id="u1"):
             "name": "Seller", "id": "msg1", "text": text}
 
 
-@pytest.mark.parametrize("text", ["Selling 2 tix", "anyone SELLING?", "selling."])
+@pytest.mark.parametrize("text", [
+    "Selling 2 tix", "anyone SELLING?", "selling.",
+    # disguised spellings spam bots use
+    "\U0001d412\U0001d41e\U0001d425\U0001d425\U0001d422\U0001d427\U0001d420",  # bold "Selling"
+    "\u0455\u0435ll\u0456ng",  # Cyrillic look-alikes
+    "sel\u200bling", "s e l l i n g", "S.E.L.L.I.N.G", "se11ing", "$elling", "sellin cheap",
+    # ticket + sale/giveaway call to action
+    "Giving away 4 free tickets to the concert DM me",
+    "\U0001f39f\ufe0f tix available, venmo me",
+    "2 tickets $40 each", "T1CKETS for sale", "tickets!! hmu",
+    "ISO 2 tickets, will pay", "WTB ticket", "t i c k e t s dm me",
+])
 def test_should_ban(text):
     assert bot.should_ban(text)
 
 
-@pytest.mark.parametrize("text", ["sell me", "bestselling book", "", None, "buying tickets"])
+@pytest.mark.parametrize("text", [
+    "", None, "see you at the meeting", "bestselling book", "sell me on this idea",
+    "where do I buy tickets for the hackathon?", "do I need a ticket for tonight?",
+    "I lost my ticket lol", "the event is free", "DM me about the project",
+    "Selin is presenting today", "I scored 100 on the exam!!", "@everyone meeting at 7",
+])
 def test_should_not_ban(text):
     assert not bot.should_ban(text)
 
@@ -72,6 +99,29 @@ def test_never_bans_admins(calls):
     post(user_msg("selling stickers", user_id="u2"))
     assert calls == []
     assert "u2" not in bot.load_banned()
+
+
+def test_never_bans_exempt_users(calls, monkeypatch):
+    monkeypatch.setattr(bot, "EXEMPT_USER_IDS", {"u1"})
+    post(user_msg("selling club merch"))
+    assert calls == []
+
+
+def test_deletes_followup_spam_after_removal(calls, monkeypatch):
+    # The member is already gone (removed by their first message).
+    monkeypatch.setattr(bot.requests, "get",
+                        lambda url, **kw: FakeResponse({"response": {"members": []}}))
+    post(user_msg("selling tix again"))
+    assert any(c[0] == "delete" for c in calls)
+    assert not any("/remove" in c[1] for c in calls)
+
+
+def test_spam_wave_posts_one_notice_without_names(calls):
+    for _ in range(5):
+        post(user_msg("selling tix"))
+    notices = bot_posts(calls)
+    assert len(notices) == 1
+    assert "Seller" not in notices[0]
 
 
 def test_rejects_bad_secret(calls):
@@ -100,4 +150,4 @@ def test_dry_run_does_not_remove(calls, monkeypatch):
     monkeypatch.setattr(bot, "DRY_RUN", True)
     post(user_msg("selling"))
     assert not any("/remove" in c[1] or c[0] == "delete" for c in calls)
-    assert calls[-1][2]["text"].startswith("[dry run]")
+    assert bot_posts(calls)[-1].startswith("[dry run]")

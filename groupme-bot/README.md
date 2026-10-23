@@ -1,13 +1,24 @@
-# GroupMe "No Selling" Bot
+# GroupMe Anti-Ticket-Spam Bot
 
-Bans anyone who posts the word **"selling"** in the club GroupMe. When it fires, the bot:
+Stops spam accounts that flood the club GroupMe with ticket sales and "giveaways". When a message is flagged, the bot:
 
-1. Deletes the message (best effort, since this uses an undocumented GroupMe endpoint)
+1. Deletes the message (best effort, since this uses an undocumented GroupMe endpoint). Follow-up messages from an account that was already removed get deleted too.
 2. Removes the member from the group
 3. Adds their user ID to a ban list and removes them again if they rejoin
-4. Posts a short notice in the chat
+4. Posts a short notice in the chat: at most one every 5 minutes, and never including the spammer's name (spam accounts hide links and phone numbers in their names)
 
-Group owners and admins are never removed. The match is the whole word "selling" in any case ("Selling", "SELLING"); words like "bestselling" don't count.
+Group owners, admins and anyone in `EXEMPT_USER_IDS` are never removed.
+
+## What gets flagged
+
+- Any message with the word **"selling"**
+- A message that mentions **tickets** (`ticket`, `tix`, 🎟️ ...) **and** a sale or giveaway call to action: a price (`$40`), a payment app (Venmo, Cash App, Zelle, PayPal), `DM me` / `text me` / `hmu`, `giving away`, `free tickets`, `for sale`, `WTS`/`WTB`/`ISO`
+
+Questions like "where do I buy tickets for the hackathon?" or "do I need a ticket?" are **not** flagged.
+
+Spam bots disguise words, so text is normalized first: fancy Unicode fonts (𝐒𝐞𝐥𝐥𝐢𝐧𝐠), look-alike Cyrillic letters, hidden zero-width characters, leetspeak (`se11ing`, `T1CKETS`) and spaced-out letters (`s e l l i n g`) are all caught.
+
+**Not caught:** spam that's only an image with no text. Watch for it in the logs and add a check if it becomes a problem.
 
 ## Setup
 
@@ -28,6 +39,8 @@ Group owners and admins are never removed. The match is the whole word "selling"
 | `GROUP_ID` | yes | Only messages from this group are acted on |
 | `CALLBACK_SECRET` | yes | Any random string; must match `?secret=` in the callback URL. Without it, anyone who finds your URL could get people kicked. |
 | `DRY_RUN` | no | `1` = announce what it *would* do without removing anyone |
+| `EXEMPT_USER_IDS` | no | Comma-separated user IDs that are never removed (e.g. e-board members who post about event tickets) |
+| `ANNOUNCE_COOLDOWN` | no | Seconds between chat notices during a spam wave (default `300`) |
 | `BANNED_USER_IDS` | no | Comma-separated user IDs that are always banned |
 | `BAN_FILE` | no | Where the ban list is saved (default `banned.json`) |
 
