@@ -5,7 +5,7 @@ Stops spam accounts that flood the club GroupMe with ticket sales and "giveaways
 1. Deletes the message (best effort, since this uses an undocumented GroupMe endpoint). Follow-up messages from an account that was already removed get deleted too.
 2. Removes the member from the group
 3. Adds their user ID to a ban list and removes them again if they rejoin
-4. Posts a short notice in the chat: at most one every 5 minutes, and never including the spammer's name (spam accounts hide links and phone numbers in their names)
+4. Optionally (`ANNOUNCE=1`) posts a short notice in the chat: at most one every 5 minutes, and never including the spammer's name. Off by default, so the bot works silently.
 
 Group owners, admins and anyone in `EXEMPT_USER_IDS` are never removed.
 
@@ -35,10 +35,11 @@ Spam bots disguise words, so text is normalized first: fancy Unicode fonts (𝐒
 | Variable | Required | Description |
 | --- | --- | --- |
 | `GROUPME_TOKEN` | yes | Admin/owner access token |
-| `GROUPME_BOT_ID` | yes | Bot ID from dev.groupme.com/bots |
+| `GROUPME_BOT_ID` | no | Bot ID from dev.groupme.com/bots; only needed with `ANNOUNCE=1` |
 | `GROUP_ID` | yes | Only messages from this group are acted on |
 | `CALLBACK_SECRET` | yes | Any random string; must match `?secret=` in the callback URL. Without it, anyone who finds your URL could get people kicked. |
-| `DRY_RUN` | no | `1` = announce what it *would* do without removing anyone |
+| `DRY_RUN` | no | `1` = only log what it *would* do (search Render's logs for `[dry run]`); nothing is posted, deleted or removed |
+| `ANNOUNCE` | no | `1` = post a notice in the chat after removals (default `0`, silent) |
 | `EXEMPT_USER_IDS` | no | Comma-separated user IDs that are never removed (e.g. e-board members who post about event tickets) |
 | `ANNOUNCE_COOLDOWN` | no | Seconds between chat notices during a spam wave (default `300`) |
 | `BANNED_USER_IDS` | no | Comma-separated user IDs that are always banned |

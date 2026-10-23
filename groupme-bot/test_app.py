@@ -41,6 +41,7 @@ def reset_announce(monkeypatch):
     monkeypatch.setattr(bot, "_last_announce", 0.0)
     monkeypatch.setattr(bot, "_removed_since_announce", 0)
     monkeypatch.setattr(bot, "EXEMPT_USER_IDS", set())
+    monkeypatch.setattr(bot, "ANNOUNCE", True)
 
 
 def bot_posts(calls):
@@ -146,8 +147,16 @@ def test_removes_banned_user_on_rejoin(calls):
     assert any(c[1].endswith("/members/m1/remove") for c in calls)
 
 
-def test_dry_run_does_not_remove(calls, monkeypatch):
+def test_dry_run_only_logs(calls, monkeypatch):
     monkeypatch.setattr(bot, "DRY_RUN", True)
     post(user_msg("selling"))
     assert not any("/remove" in c[1] or c[0] == "delete" for c in calls)
-    assert bot_posts(calls)[-1].startswith("[dry run]")
+    assert bot_posts(calls) == []
+    assert "u1" not in bot.load_banned()
+
+
+def test_no_chat_notice_unless_announce_enabled(calls, monkeypatch):
+    monkeypatch.setattr(bot, "ANNOUNCE", False)
+    post(user_msg("selling tix"))
+    assert any("/remove" in c[1] for c in calls)
+    assert bot_posts(calls) == []

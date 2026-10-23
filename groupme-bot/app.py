@@ -32,6 +32,8 @@ CALLBACK_SECRET = os.environ.get("CALLBACK_SECRET", "")
 BAN_FILE = os.environ.get("BAN_FILE", "banned.json")
 DRY_RUN = os.environ.get("DRY_RUN", "0") == "1"
 EXEMPT_USER_IDS = {u.strip() for u in os.environ.get("EXEMPT_USER_IDS", "").split(",") if u.strip()}
+# ANNOUNCE=1 posts a notice in the chat after removals (off by default).
+ANNOUNCE = os.environ.get("ANNOUNCE", "0") == "1"
 # During a spam wave, post at most one notice per this many seconds.
 ANNOUNCE_COOLDOWN = int(os.environ.get("ANNOUNCE_COOLDOWN", "300"))
 
@@ -108,8 +110,6 @@ def add_banned(user_id):
 # --- GroupMe API ------------------------------------------------------------
 
 def bot_say(text):
-    if DRY_RUN:
-        text = f"[dry run] {text}"
     requests.post(f"{API}/bots/post", json={"bot_id": GROUPME_BOT_ID, "text": text}, timeout=10)
 
 
@@ -120,6 +120,8 @@ def announce_removal():
     numbers in their names.
     """
     global _last_announce, _removed_since_announce
+    if not ANNOUNCE or DRY_RUN:
+        return
     with _announce_lock:
         _removed_since_announce += 1
         now = time.monotonic()
@@ -177,6 +179,10 @@ def ban(group_id, user_id, message_id=None):
     member = find_member(group_id, user_id)
     if member is not None and is_admin(member):
         log.info("not banning admin %s", user_id)
+        return False
+
+    if DRY_RUN:
+        log.info("[dry run] would ban %s", user_id)
         return False
 
     # Delete even if they're already gone: spam bots send several messages
